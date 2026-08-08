@@ -452,8 +452,9 @@
         <div class="legend">
           • Same element bonded → still an <strong>element</strong> (e.g. O<sub>2</sub>)<br>
           • Different elements bonded → <strong>compound</strong> (e.g. H<sub>2</sub>O)<br>
-          • Multiple separate pieces → <strong>mixture</strong><br>
-          • Formulas use the smallest whole-number ratios for each connected molecule.
+          • Several identical molecules → still pure <strong>element</strong> or <strong>compound</strong><br>
+          • Different formulas present → <strong>mixture</strong><br>
+          • Formulas use atom counts for each connected molecule.
         </div>
       </div>
     </aside>
@@ -637,7 +638,7 @@
         displayEl.innerHTML = "—";
         classEl.textContent = "Empty";
         classEl.className = "classification empty";
-        meaningEl.innerHTML = "Add atoms to begin. Connected groups of different elements form <strong>compounds</strong>. Separate groups form a <strong>mixture</strong>.";
+        meaningEl.innerHTML = "Add atoms to begin. Connected groups of different elements form <strong>compounds</strong>. Several identical molecules stay a pure substance; different formulas make a <strong>mixture</strong>.";
         return;
       }
 
@@ -651,26 +652,35 @@
       displayEl.innerHTML = parts.join(" + ");
 
       // Classification
+      // Multiple identical molecules still count as a pure substance
+      // (element or compound). Only different formulas make a mixture.
+      const uniqueForms = [...new Set(formulas)];
       let type, meaning;
-      if (formulas.length === 1) {
-        const f = formulas[0];
+
+      if (uniqueForms.length === 1) {
+        const f = uniqueForms[0];
         const symbols = f.match(/[A-Z][a-z]?/g) || [];
-        const unique = new Set(symbols);
-        if (unique.size === 1) {
+        const uniqueElements = new Set(symbols);
+        const count = formulas.length;
+
+        if (uniqueElements.size === 1) {
           type = "element";
-          meaning = `This is a pure <strong>element</strong>. All atoms are the same kind (${symbols[0]}). The formula shows how many atoms are bonded together.`;
+          if (count === 1) {
+            meaning = `This is a pure <strong>element</strong>. All atoms are the same kind (${symbols[0]}). The formula shows how many atoms are bonded together.`;
+          } else {
+            meaning = `This is a pure <strong>element</strong>. You have ${count} identical molecules of ${formulaToHTML(f)}. Same particle type throughout = pure substance.`;
+          }
         } else {
           type = "compound";
-          meaning = `This is a <strong>compound</strong>. Different elements are chemically bonded in a fixed ratio. The formula is the molecular formula of the connected group.`;
+          if (count === 1) {
+            meaning = `This is a pure <strong>compound</strong>. Different elements are chemically bonded in a fixed ratio. The formula is the molecular formula of the connected group.`;
+          } else {
+            meaning = `This is a pure <strong>compound</strong>. You have ${count} identical molecules of ${formulaToHTML(f)}. Same particle type throughout = pure substance.`;
+          }
         }
       } else {
         type = "mixture";
-        const uniqueForms = new Set(formulas);
-        if (uniqueForms.size === 1) {
-          meaning = `This is a <strong>mixture</strong> of identical molecules (same formula repeated). In reality they would be the same substance, but here they are separate particle groups.`;
-        } else {
-          meaning = `This is a <strong>mixture</strong>. You have more than one kind of particle (different formulas) that are not bonded to each other.`;
-        }
+        meaning = `This is a <strong>mixture</strong>. You have more than one kind of particle (different formulas) that are not bonded to each other.`;
       }
 
       classEl.textContent = type;
