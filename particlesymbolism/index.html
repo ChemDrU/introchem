@@ -498,10 +498,10 @@
       { display: "N<sub>2</sub>", molecules: ["N2"] },
       { display: "H<sub>2</sub>O", molecules: ["H2O"] },
       { display: "CO<sub>2</sub>", molecules: ["CO2"] },
-      { display: "NH<sub>3</sub>", molecules: ["H3N"] },
+      { display: "NH<sub>3</sub>", molecules: ["NH3"] },
       { display: "CH<sub>4</sub>", molecules: ["CH4"] },
-      { display: "HCl", molecules: ["ClH"] },
-      { display: "NaCl", molecules: ["ClNa"] },
+      { display: "HCl", molecules: ["HCl"] },
+      { display: "NaCl", molecules: ["NaCl"] },
       { display: "H<sub>2</sub> + O<sub>2</sub>", molecules: ["H2", "O2"] },
       { display: "2 H<sub>2</sub>O", molecules: ["H2O", "H2O"] },
       { display: "N<sub>2</sub> + 3 H<sub>2</sub>", molecules: ["N2", "H2", "H2", "H2"] },
@@ -606,20 +606,24 @@
       return molecules;
     }
 
-    // Canonical formula for a set of atom ids (Hill-ish order: C then H then alpha)
+    // Element order for conventional formulas (NaCl, NH3, H2O, HCl, CO2, …)
+    // Metals first, then C, N, H, then other nonmetals in a stable order.
+    const FORMULA_ORDER = ["Na", "C", "N", "H", "O", "S", "F", "Cl"];
+    function formulaOrderIndex(sym) {
+      const i = FORMULA_ORDER.indexOf(sym);
+      return i === -1 ? 100 + sym.charCodeAt(0) : i;
+    }
+
+    // Canonical formula for a set of atom ids
     function formulaForGroup(ids) {
       const counts = {};
       ids.forEach(id => {
         const sym = atomById(id).symbol;
         counts[sym] = (counts[sym] || 0) + 1;
       });
-      const keys = Object.keys(counts).sort((a, b) => {
-        if (a === "C") return -1;
-        if (b === "C") return 1;
-        if (a === "H") return -1;
-        if (b === "H") return 1;
-        return a.localeCompare(b);
-      });
+      const keys = Object.keys(counts).sort(
+        (a, b) => formulaOrderIndex(a) - formulaOrderIndex(b)
+      );
       return keys.map(k => counts[k] === 1 ? k : k + counts[k]).join("");
     }
 
