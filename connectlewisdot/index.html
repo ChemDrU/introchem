@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lewis Dot Lab — build Lewis structures by hand</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F5F7F1;
+    --paper-2:#EEF1E9;
+    --grid:#D9E2D6;
+    --ink:#1C2622;
+    --ink-soft:#4A564E;
+    --bond:#2B6E63;
+    --bond-soft:#BFE0D8;
+    --warn:#C4501E;
+    --good:#2B6E63;
+    --accent:#E3A23D;
+    --alkali:#C6577E;
+    --alkaline:#D9A441;
+    --metalloid:#7D8C4C;
+    --nonmetal:#2B6E63;
+    --halogen:#4C6FB0;
+    --noble:#8B6BAF;
+    --other:#5B6B72;
+    --radius:10px;
+    --shadow: 0 1px 0 rgba(28,38,34,0.06), 0 6px 16px rgba(28,38,34,0.08);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;margin:0;}
+
+  .app{
+    display:grid;
+    grid-template-rows:auto 1fr;
+    height:100vh;
+  }
+
+  /* ---------- header ---------- */
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    padding:14px 20px;
+    background:var(--paper);
+    border-bottom:1px solid var(--grid);
+    flex-wrap:wrap;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .brand .mark{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:13px;
+    color:var(--bond);
+    border:1.5px solid var(--bond);
+    border-radius:6px;
+    padding:2px 6px;
+    letter-spacing:0.03em;
+  }
+  .brand h1{
+    font-size:19px;
+    font-weight:700;
+    letter-spacing:-0.01em;
+  }
+  .brand p{
+    margin:0;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .header-actions{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  button{
+    font-family:'Inter',sans-serif;
+    cursor:pointer;
+  }
+  .btn{
+    appearance:none;
+    border:1.5px solid var(--grid);
+    background:#fff;
+    color:var(--ink);
+    font-size:13px;
+    font-weight:600;
+    padding:8px 13px;
+    border-radius:8px;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    transition:border-color .15s, transform .1s, background .15s;
+  }
+  .btn:hover{border-color:var(--bond); background:var(--bond-soft);}
+  .btn:active{transform:translateY(1px);}
+  .btn.primary{background:var(--bond); border-color:var(--bond); color:#fff;}
+  .btn.primary:hover{background:#235a51;}
+  .btn.ghost{background:transparent;}
+  .btn:focus-visible, button:focus-visible, [tabindex]:focus-visible{
+    outline:3px solid var(--accent);
+    outline-offset:2px;
+  }
+
+  /* ---------- layout ---------- */
+  .layout{
+    display:grid;
+    grid-template-columns:252px 1fr;
+    min-height:0;
+  }
+  @media (max-width: 820px){
+    .layout{grid-template-columns:1fr;}
+    aside{border-right:none !important; border-bottom:1px solid var(--grid);}
+  }
+
+  aside{
+    border-right:1px solid var(--grid);
+    overflow-y:auto;
+    padding:16px 14px 40px;
+    background:var(--paper-2);
+  }
+  aside h2{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--ink-soft);
+    margin-bottom:10px;
+    margin-top:22px;
+  }
+  aside h2:first-child{margin-top:0;}
+
+  .element-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:6px;
+  }
+  .tile{
+    position:relative;
+    aspect-ratio:1;
+    border-radius:8px;
+    border:1.5px solid rgba(28,38,34,0.08);
+    background:#fff;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:2px;
+    transition:transform .12s, box-shadow .12s, border-color .12s;
+  }
+  .tile::before{
+    content:"";
+    position:absolute;
+    top:0;left:0;right:0;
+    height:4px;
+    border-radius:8px 8px 0 0;
+    background:var(--cat-color);
+  }
+  .tile:hover, .tile:focus-visible{
+    transform:translateY(-2px);
+    box-shadow:var(--shadow);
+    border-color:var(--cat-color);
+  }
+  .tile:active{ transform:translateY(0) scale(0.97); }
+  .tile .sym{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:16px;
+    color:var(--ink);
+  }
+  .tile .ve{
+    font-size:9px;
+    color:var(--ink-soft);
+    font-weight:600;
+  }
+  .tile[draggable="true"]{cursor:grab;}
+  .tile.dragging{opacity:0.4;}
+
+  .legend{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    margin-top:10px;
+  }
+  .legend span.dot{
+    display:inline-block;
+    width:8px;height:8px;
+    border-radius:50%;
+    margin-right:6px;
+    background:var(--c);
+  }
+
+  .challenge-list{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .challenge{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:8px 10px;
+    border-radius:8px;
+    border:1.5px solid rgba(28,38,34,0.08);
+    background:#fff;
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .challenge:hover{border-color:var(--bond);}
+  .challenge.active{border-color:var(--bond); background:var(--bond-soft);}
+  .challenge small{
+    font-family:'Inter',sans-serif;
+    font-weight:500;
+    color:var(--ink-soft);
+    font-size:10.5px;
+  }
+
+  /* ---------- workspace ---------- */
+  .workspace-wrap{
+    position:relative;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+  }
+  .workspace-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:8px 16px;
+    border-bottom:1px solid var(--grid);
+    background:#fff;
+    font-size:12.5px;
+    flex-wrap:wrap;
+  }
+  .workspace-bar .status{
+    color:var(--ink-soft);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  #checkResult{
+    font-weight:600;
+    padding:3px 9px;
+    border-radius:20px;
+    font-size:12px;
+  }
+  #checkResult.ok{background:#DDEFE9; color:var(--good);}
+  #checkResult.bad{background:#F7E3D6; color:var(--warn);}
+
+  #workspace{
+    position:relative;
+    flex:1;
+    overflow:auto;
+    background-color:var(--paper);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:28px 28px;
+    background-position:-1px -1px;
+  }
+  #workspace.drop-hover{background-color:var(--bond-soft);}
+
+  #workspace .empty-hint{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:14px;
+    pointer-events:none;
+    padding:20px;
+  }
+  #workspace .empty-hint strong{color:var(--ink); display:block; font-family:'Space Grotesk',sans-serif; font-size:16px; margin-bottom:4px;}
+
+  svg#bondLayer{
+    position:absolute;
+    top:0; left:0;
+    pointer-events:none;
+  }
+  svg#bondLayer .bond-hit{ pointer-events:auto; cursor:pointer; }
+  svg#bondLayer .bond-hit:hover circle.bd{ stroke:var(--warn); }
+
+  .atom{
+    position:absolute;
+    width:96px;
+    height:96px;
+    margin-left:-48px;
+    margin-top:-48px;
+    touch-action:none;
+  }
+  .atom .core{
+    position:absolute;
+    left:24px; top:24px;
+    width:48px; height:48px;
+    border-radius:50%;
+    background:#fff;
+    border:2.5px solid var(--cat-color);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:18px;
+    color:var(--ink);
+    cursor:grab;
+    box-shadow:var(--shadow);
+    user-select:none;
+  }
+  .atom.dragging .core{cursor:grabbing; box-shadow:0 8px 22px rgba(28,38,34,0.18);}
+  .atom .badge{
+    position:absolute;
+    left:50%;
+    top:96px;
+    transform:translateX(-50%);
+    font-size:9.5px;
+    font-weight:700;
+    font-family:'JetBrains Mono',monospace;
+    padding:1px 6px;
+    border-radius:20px;
+    white-space:nowrap;
+    background:#EFE9DC;
+    color:var(--ink-soft);
+    border:1px solid rgba(28,38,34,0.08);
+  }
+  .atom .badge.ok{background:#DDEFE9; color:var(--good); border-color:transparent;}
+  .atom .del{
+    position:absolute;
+    right:6px; top:2px;
+    width:18px; height:18px;
+    border-radius:50%;
+    border:none;
+    background:#fff;
+    color:var(--ink-soft);
+    font-size:12px;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    opacity:0.45;
+    box-shadow:0 1px 3px rgba(28,38,34,0.2);
+  }
+  .atom:hover .del, .atom .del:focus-visible{opacity:1;}
+  .atom .del:hover{background:var(--warn); color:#fff;}
+
+  .dot{
+    position:absolute;
+    width:11px; height:11px;
+    border-radius:50%;
+    background:var(--ink);
+    border:none;
+    padding:0;
+    cursor:pointer;
+  }
+  .dot::after{
+    content:"";
+    position:absolute;
+    inset:-7px;
+  }
+  .dot.selected{
+    background:var(--accent);
+    box-shadow:0 0 0 4px rgba(227,162,61,0.35);
+  }
+  .dot:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  /* dot position coordinates set inline via JS per-position/index */
+
+  @media (prefers-reduced-motion: no-preference){
+    .atom{animation:pop .18s ease-out;}
+    .dot.selected{animation:pulse 1s ease-in-out infinite;}
+  }
+  @keyframes pop{ from{transform:scale(0.85); opacity:0;} to{transform:scale(1); opacity:1;} }
+  @keyframes pulse{ 0%,100%{box-shadow:0 0 0 4px rgba(227,162,61,0.35);} 50%{box-shadow:0 0 0 7px rgba(227,162,61,0.15);} }
+
+  /* ---------- instructions dialog ---------- */
+  dialog#howto{
+    border:none;
+    border-radius:14px;
+    padding:0;
+    max-width:480px;
+    width:92vw;
+    box-shadow:0 20px 60px rgba(0,0,0,0.25);
+  }
+  dialog#howto::backdrop{background:rgba(28,38,34,0.45);}
+  .dialog-inner{padding:22px 24px 20px;}
+  .dialog-inner h2{font-size:17px; margin-bottom:12px; text-transform:none; letter-spacing:0; color:var(--ink);}
+  .dialog-inner ol{margin:0; padding-left:20px; display:flex; flex-direction:column; gap:9px; font-size:14px; line-height:1.45;}
+  .dialog-inner ol li strong{color:var(--bond);}
+  .dialog-inner .close-row{margin-top:18px; display:flex; justify-content:flex-end;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <span class="mark">e⁻</span>
+      <div>
+        <h1>Lewis Dot Lab</h1>
+        <p>Drag elements in, click two unpaired dots to bond them.</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn ghost" id="howtoBtn">How it works</button>
+      <button class="btn" id="clearBtn">Clear workspace</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside>
+      <h2>Elements</h2>
+      <div class="element-grid" id="elementGrid"></div>
+      <div class="legend" id="legend"></div>
+
+      <h2>Molecule challenges</h2>
+      <div class="challenge-list" id="challengeList"></div>
+    </aside>
+
+    <div class="workspace-wrap">
+      <div class="workspace-bar">
+        <div class="status">
+          <span id="challengeStatus">No challenge selected — free build mode.</span>
+          <span id="checkResult" style="display:none;"></span>
+        </div>
+        <button class="btn primary" id="checkBtn" style="display:none;">Check my structure</button>
+      </div>
+      <div id="workspace">
+        <svg id="bondLayer"></svg>
+        <div class="empty-hint" id="emptyHint">
+          <div>
+            <strong>Empty workspace</strong>
+            Tap or drag an element from the left to place an atom here.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<dialog id="howto">
+  <div class="dialog-inner">
+    <h2>How to build a Lewis structure</h2>
+    <ol>
+      <li><strong>Add atoms.</strong> Drag an element tile onto the workspace, or just tap/click one to drop it in.</li>
+      <li><strong>Arrange them.</strong> Drag any atom by its circle to reposition it.</li>
+      <li><strong>Form a bond.</strong> Click one unpaired (single) electron dot, then click an unpaired dot on a different atom. The two electrons merge into a shared pair between them.</li>
+      <li><strong>Double / triple bonds.</strong> Repeat the click-pair between the same two atoms using more of their unpaired dots.</li>
+      <li><strong>Break a bond.</strong> Click the shared pair sitting on the bond line — the electrons return home.</li>
+      <li><strong>Watch the badge</strong> under each atom: it fills in green once that atom has a full outer shell (8 electrons, or 2 for hydrogen/helium).</li>
+      <li><strong>Try a challenge</strong> from the sidebar, then press <em>Check my structure</em> once you think it's right.</li>
+    </ol>
+    <div class="close-row"><button class="btn primary" id="howtoClose">Got it</button></div>
+  </div>
+</dialog>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- data ---------------- */
+  var ELEMENTS = [
+    {sym:"H",  name:"Hydrogen",  ve:1, cat:"other"},
+    {sym:"He", name:"Helium",    ve:2, cat:"noble"},
+    {sym:"Li", name:"Lithium",   ve:1, cat:"alkali"},
+    {sym:"Be", name:"Beryllium", ve:2, cat:"alkaline"},
+    {sym:"B",  name:"Boron",     ve:3, cat:"metalloid"},
+    {sym:"C",  name:"Carbon",    ve:4, cat:"nonmetal"},
+    {sym:"N",  name:"Nitrogen",  ve:5, cat:"nonmetal"},
+    {sym:"O",  name:"Oxygen",    ve:6, cat:"nonmetal"},
+    {sym:"F",  name:"Fluorine",  ve:7, cat:"halogen"},
+    {sym:"Ne", name:"Neon",      ve:8, cat:"noble"},
+    {sym:"Na", name:"Sodium",    ve:1, cat:"alkali"},
+    {sym:"Mg", name:"Magnesium", ve:2, cat:"alkaline"},
+    {sym:"Al", name:"Aluminium", ve:3, cat:"metalloid"},
+    {sym:"Si", name:"Silicon",   ve:4, cat:"metalloid"},
+    {sym:"P",  name:"Phosphorus",ve:5, cat:"nonmetal"},
+    {sym:"S",  name:"Sulfur",    ve:6, cat:"nonmetal"},
+    {sym:"Cl", name:"Chlorine",  ve:7, cat:"halogen"},
+    {sym:"Ar", name:"Argon",     ve:8, cat:"noble"},
+    {sym:"Br", name:"Bromine",   ve:7, cat:"halogen"},
+    {sym:"I",  name:"Iodine",    ve:7, cat:"halogen"}
+  ];
+
+  var CAT_LABEL = {
+    alkali:"Alkali metals", alkaline:"Alkaline earth", metalloid:"Metalloids / other metals",
+    nonmetal:"Nonmetals", halogen:"Halogens", noble:"Noble gases", other:"Hydrogen"
+  };
+
+  var CHALLENGES = [
+    {formula:"H2",  atoms:["H","H"],           hint:"one single bond"},
+    {formula:"O2",  atoms:["O","O"],           hint:"a double bond"},
+    {formula:"N2",  atoms:["N","N"],           hint:"a triple bond"},
+    {formula:"HCl", atoms:["H","Cl"],          hint:"one single bond"},
+    {formula:"H2O", atoms:["H","H","O"],       hint:"two O–H bonds, 2 lone pairs on O"},
+    {formula:"CO2", atoms:["C","O","O"],       hint:"two C=O double bonds"},
+    {formula:"NH3", atoms:["N","H","H","H"],   hint:"three N–H bonds, 1 lone pair on N"},
+    {formula:"CH4", atoms:["C","H","H","H","H"], hint:"four C–H bonds"}
+  ];
+
+  var POS_ORDER = ["top","right","bottom","left"];
+  var POS_ANGLE = {top:-90, right:0, bottom:90, left:180}; // degrees, for offsetting the 2 dots in a pair
+
+  /* ---------------- state ---------------- */
+  var atoms = [];        // {id, sym, ve, cat, x, y, dots:{top:[{state}],...}}
+  var bonds = [];        // {id, a:{atomId,pos,idx}, b:{atomId,pos,idx}}
+  var nextId = 1;
+  var selectedDot = null; // {atomId,pos,idx}
+  var activeChallenge = null;
+  var placedCount = 0;
+
+  var workspace = document.getElementById("workspace");
+  var bondLayer = document.getElementById("bondLayer");
+  var emptyHint = document.getElementById("emptyHint");
+
+  /* ---------------- helpers ---------------- */
+  function byId(id){ for(var i=0;i<atoms.length;i++){ if(atoms[i].id===id) return atoms[i]; } return null; }
+
+  function buildDotCounts(ve){
+    var counts = {top:0,right:0,bottom:0,left:0};
+    var remaining = ve;
+    for(var i=0;i<4 && remaining>0;i++){ counts[POS_ORDER[i]] = 1; remaining--; }
+    for(var j=0;j<4 && remaining>0;j++){ counts[POS_ORDER[j]] = 2; remaining--; }
+    return counts;
+  }
+
+  function makeDotsStruct(ve){
+    var counts = buildDotCounts(ve);
+    var d = {};
+    POS_ORDER.forEach(function(p){
+      d[p] = [];
+      for(var i=0;i<counts[p];i++){ d[p].push({state:"lone"}); }
+    });
+    return d;
+  }
+
+  function consumedCount(atom){
+    var n = 0;
+    POS_ORDER.forEach(function(p){
+      atom.dots[p].forEach(function(d){ if(d.state==="bonded") n++; });
+    });
+    return n;
+  }
+
+  function targetEnv(sym){ return (sym==="H" || sym==="He") ? 2 : 8; }
+
+  /* ---------------- sidebar: element tiles ---------------- */
+  var grid = document.getElementById("elementGrid");
+  ELEMENTS.forEach(function(el){
+    var tile = document.createElement("button");
+    tile.className = "tile";
+    tile.type = "button";
+    tile.style.setProperty("--cat-color", "var(--"+el.cat+")");
+    tile.setAttribute("draggable","true");
+    tile.setAttribute("aria-label", el.name + ", " + el.ve + " valence electrons. Add to workspace.");
+    tile.innerHTML = '<span class="sym">'+el.sym+'</span><span class="ve">'+el.ve+'e\u207B</span>';
+    tile.addEventListener("dragstart", function(e){
+      tile.classList.add("dragging");
+      e.dataTransfer.setData("text/plain", el.sym);
+      e.dataTransfer.effectAllowed = "copy";
+    });
+    tile.addEventListener("dragend", function(){ tile.classList.remove("dragging"); });
+    tile.addEventListener("click", function(){
+      var rect = workspace.getBoundingClientRect();
+      var cascadeX = 90 + (placedCount % 6) * 92;
+      var cascadeY = 90 + Math.floor(placedCount/6) * 110;
+      placedCount++;
+      addAtom(el, Math.min(cascadeX, rect.width-70), Math.min(cascadeY, rect.height-70));
+    });
+    grid.appendChild(tile);
+  });
+
+  var legend = document.getElementById("legend");
+  Object.keys(CAT_LABEL).forEach(function(cat){
+    var row = document.createElement("div");
+    row.innerHTML = '<span class="dot" style="--c:var(--'+cat+')"></span>'+CAT_LABEL[cat];
+    legend.appendChild(row);
+  });
+
+  /* ---------------- sidebar: challenges ---------------- */
+  var challengeList = document.getElementById("challengeList");
+  var challengeStatus = document.getElementById("challengeStatus");
+  var checkBtn = document.getElementById("checkBtn");
+  var checkResult = document.getElementById("checkResult");
+
+  CHALLENGES.forEach(function(ch){
+    var row = document.createElement("button");
+    row.type = "button";
+    row.className = "challenge";
+    row.innerHTML = '<span>'+ch.formula+'</span><small>'+ch.hint+'</small>';
+    row.addEventListener("click", function(){
+      var already = activeChallenge === ch;
+      Array.prototype.forEach.call(challengeList.children, function(c){ c.classList.remove("active"); });
+      if(already){
+        activeChallenge = null;
+        challengeStatus.textContent = "No challenge selected — free build mode.";
+        checkBtn.style.display = "none";
+        checkResult.style.display = "none";
+        return;
+      }
+      activeChallenge = ch;
+      row.classList.add("active");
+      challengeStatus.textContent = "Building " + ch.formula + " — try for " + ch.hint + ".";
+      checkBtn.style.display = "inline-flex";
+      checkResult.style.display = "none";
+    });
+    challengeList.appendChild(row);
+  });
+
+  checkBtn.addEventListener("click", function(){
+    if(!activeChallenge) return;
+    var res = checkStructure(activeChallenge);
+    checkResult.style.display = "inline-block";
+    checkResult.textContent = res.ok ? "\u2713 " + res.msg : res.msg;
+    checkResult.className = res.ok ? "ok" : "bad";
+  });
+
+  function checkStructure(ch){
+    var need = ch.atoms.slice().sort();
+    var have = atoms.map(function(a){return a.sym;}).sort();
+    if(need.length !== have.length || need.join(",") !== have.join(",")){
+      return {ok:false, msg:"Expected atoms: " + need.join(", ") + " — workspace has: " + (have.join(", ") || "none") + "."};
+    }
+    if(atoms.length > 1){
+      var adj = {};
+      atoms.forEach(function(a){ adj[a.id] = []; });
+      bonds.forEach(function(b){ adj[b.a.atomId].push(b.b.atomId); adj[b.b.atomId].push(b.a.atomId); });
+      var seen = {}; var stack = [atoms[0].id]; seen[atoms[0].id]=true;
+      while(stack.length){
+        var cur = stack.pop();
+        adj[cur].forEach(function(n){ if(!seen[n]){ seen[n]=true; stack.push(n); } });
+      }
+      if(Object.keys(seen).length !== atoms.length){
+        return {ok:false, msg:"Not every atom is connected yet — add the missing bond(s)."};
+      }
+    }
+    for(var i=0;i<atoms.length;i++){
+      var a = atoms[i];
+      var env = a.ve + consumedCount(a);
+      var t = targetEnv(a.sym);
+      if(env !== t){
+        return {ok:false, msg: a.sym + " has " + env + " of " + t + " electrons — not a full " + (t===2?"duet":"octet") + " yet."};
+      }
+    }
+    return {ok:true, msg:"Looks correct — every atom has a full shell and the structure is connected."};
+  }
+
+  /* ---------------- workspace drag & drop (native, desktop) ---------------- */
+  workspace.addEventListener("dragover", function(e){ e.preventDefault(); workspace.classList.add("drop-hover"); });
+  workspace.addEventListener("dragleave", function(){ workspace.classList.remove("drop-hover"); });
+  workspace.addEventListener("drop", function(e){
+    e.preventDefault();
+    workspace.classList.remove("drop-hover");
+    var sym = e.dataTransfer.getData("text/plain");
+    var el = ELEMENTS.find(function(x){return x.sym===sym;});
+    if(!el) return;
+    var rect = workspace.getBoundingClientRect();
+    var x = e.clientX - rect.left + workspace.scrollLeft;
+    var y = e.clientY - rect.top + workspace.scrollTop;
+    addAtom(el, x, y);
+  });
+
+  /* ---------------- atom creation & rendering ---------------- */
+  function addAtom(el, x, y){
+    var atom = { id: nextId++, sym: el.sym, name: el.name, ve: el.ve, cat: el.cat, x:x, y:y, dots: makeDotsStruct(el.ve) };
+    atoms.push(atom);
+    renderAtom(atom);
+    updateEmptyHint();
+    renderBonds();
+  }
+
+  function removeAtom(atomId){
+    // remove bonds touching this atom, restoring the *other* atom's dot
+    bonds = bonds.filter(function(b){
+      if(b.a.atomId===atomId || b.b.atomId===atomId){
+        var other = (b.a.atomId===atomId) ? b.b : b.a;
+        var oa = byId(other.atomId);
+        if(oa) oa.dots[other.pos][other.idx].state = "lone";
+        var el = document.querySelector('.atom[data-id="'+other.atomId+'"]');
+        if(el && oa) renderDotsInto(el, oa);
+        return false;
+      }
+      return true;
+    });
+    atoms = atoms.filter(function(a){ return a.id !== atomId; });
+    var node = document.querySelector('.atom[data-id="'+atomId+'"]');
+    if(node) node.remove();
+    if(selectedDot && selectedDot.atomId===atomId) selectedDot = null;
+    updateEmptyHint();
+    renderBonds();
+  }
+
+  function updateEmptyHint(){ emptyHint.style.display = atoms.length ? "none" : "flex"; }
+
+  function dotOffset(pos, idx, total){
+    // returns {dx,dy} from atom center (48,48 within 96x96 box), radius ~34
+    var r = 34;
+    var angle = POS_ANGLE[pos] * Math.PI/180;
+    var baseX = 48 + r*Math.cos(angle);
+    var baseY = 48 + r*Math.sin(angle);
+    if(total===1) return {x:baseX-5.5, y:baseY-5.5};
+    // spread two dots perpendicular to the radial direction
+    var perp = angle + Math.PI/2;
+    var spread = 7;
+    var sign = idx===0 ? -1 : 1;
+    return { x: baseX + sign*spread*Math.cos(perp) - 5.5, y: baseY + sign*spread*Math.sin(perp) - 5.5 };
+  }
+
+  function renderDotsInto(atomEl, atom){
+    var old = atomEl.querySelectorAll(".dot");
+    old.forEach(function(n){ n.remove(); });
+    POS_ORDER.forEach(function(pos){
+      var arr = atom.dots[pos];
+      arr.forEach(function(d, idx){
+        if(d.state === "bonded") return;
+        var off = dotOffset(pos, idx, arr.length);
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "dot";
+        btn.style.left = off.x+"px";
+        btn.style.top = off.y+"px";
+        btn.setAttribute("aria-label", atom.sym + " unpaired electron (" + pos + ")");
+        var isSel = selectedDot && selectedDot.atomId===atom.id && selectedDot.pos===pos && selectedDot.idx===idx;
+        if(isSel) btn.classList.add("selected");
+        btn.addEventListener("click", function(ev){
+          ev.stopPropagation();
+          onDotClick(atom.id, pos, idx);
+        });
+        atomEl.appendChild(btn);
+      });
+    });
+  }
+
+  function updateBadge(atomEl, atom){
+    var badge = atomEl.querySelector(".badge");
+    var env = atom.ve + consumedCount(atom);
+    var t = targetEnv(atom.sym);
+    badge.textContent = env + "/" + t + " e\u207B";
+    badge.classList.toggle("ok", env===t);
+  }
+
+  function renderAtom(atom){
+    var el = document.createElement("div");
+    el.className = "atom";
+    el.setAttribute("data-id", atom.id);
+    el.style.left = atom.x+"px";
+    el.style.top = atom.y+"px";
+    el.style.setProperty("--cat-color","var(--"+atom.cat+")");
+
+    var core = document.createElement("div");
+    core.className = "core";
+    core.textContent = atom.sym;
+    core.title = atom.name + " \u2014 " + atom.ve + " valence electrons";
+    el.appendChild(core);
+
+    var del = document.createElement("button");
+    del.type = "button";
+    del.className = "del";
+    del.setAttribute("aria-label", "Remove " + atom.name + " atom");
+    del.innerHTML = "&times;";
+    del.addEventListener("click", function(ev){ ev.stopPropagation(); removeAtom(atom.id); });
+    el.appendChild(del);
+
+    var badge = document.createElement("div");
+    badge.className = "badge";
+    el.appendChild(badge);
+
+    workspace.appendChild(el);
+    renderDotsInto(el, atom);
+    updateBadge(el, atom);
+
+    // dragging the atom body
+    var dragging = false, offX=0, offY=0;
+    core.addEventListener("pointerdown", function(ev){
+      dragging = true;
+      el.classList.add("dragging");
+      core.setPointerCapture(ev.pointerId);
+      var rect = workspace.getBoundingClientRect();
+      offX = (ev.clientX - rect.left + workspace.scrollLeft) - atom.x;
+      offY = (ev.clientY - rect.top + workspace.scrollTop) - atom.y;
+    });
+    core.addEventListener("pointermove", function(ev){
+      if(!dragging) return;
+      var rect = workspace.getBoundingClientRect();
+      atom.x = (ev.clientX - rect.left + workspace.scrollLeft) - offX;
+      atom.y = (ev.clientY - rect.top + workspace.scrollTop) - offY;
+      el.style.left = atom.x+"px";
+      el.style.top = atom.y+"px";
+      renderBonds();
+    });
+    function endDrag(ev){
+      if(!dragging) return;
+      dragging = false;
+      el.classList.remove("dragging");
+      try{ core.releasePointerCapture(ev.pointerId); }catch(e){}
+    }
+    core.addEventListener("pointerup", endDrag);
+    core.addEventListener("pointercancel", endDrag);
+  }
+
+  /* ---------------- bonding logic ---------------- */
+  function onDotClick(atomId, pos, idx){
+    var atom = byId(atomId);
+    if(!atom) return;
+    if(selectedDot && selectedDot.atomId===atomId && selectedDot.pos===pos && selectedDot.idx===idx){
+      selectedDot = null;
+      refreshAtomDots(atomId);
+      return;
+    }
+    if(!selectedDot){
+      selectedDot = {atomId:atomId, pos:pos, idx:idx};
+      refreshAtomDots(atomId);
+      return;
+    }
+    if(selectedDot.atomId === atomId){
+      // switch selection to the new dot on the same atom
+      var prev = selectedDot.atomId;
+      selectedDot = {atomId:atomId, pos:pos, idx:idx};
+      refreshAtomDots(prev);
+      return;
+    }
+    // form the bond
+    var a = byId(selectedDot.atomId);
+    var b = atom;
+    a.dots[selectedDot.pos][selectedDot.idx].state = "bonded";
+    b.dots[pos][idx].state = "bonded";
+    bonds.push({ id: nextId++, a:{atomId:a.id, pos:selectedDot.pos, idx:selectedDot.idx}, b:{atomId:b.id, pos:pos, idx:idx} });
+    var prevAtomId = selectedDot.atomId;
+    selectedDot = null;
+    refreshAtomDots(prevAtomId);
+    refreshAtomDots(atomId);
+    renderBonds();
+  }
+
+  function refreshAtomDots(atomId){
+    var atom = byId(atomId);
+    var el = document.querySelector('.atom[data-id="'+atomId+'"]');
+    if(!atom || !el) return;
+    renderDotsInto(el, atom);
+    updateBadge(el, atom);
+  }
+
+  function breakBond(bondId){
+    var idx = bonds.findIndex(function(b){return b.id===bondId;});
+    if(idx===-1) return;
+    var b = bonds[idx];
+    var a1 = byId(b.a.atomId), a2 = byId(b.b.atomId);
+    if(a1) a1.dots[b.a.pos][b.a.idx].state = "lone";
+    if(a2) a2.dots[b.b.pos][b.b.idx].state = "lone";
+    bonds.splice(idx,1);
+    refreshAtomDots(b.a.atomId);
+    refreshAtomDots(b.b.atomId);
+    renderBonds();
+  }
+
+  /* ---------------- bond rendering (SVG) ---------------- */
+  function svgEl(tag, attrs){
+    var e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for(var k in attrs){ e.setAttribute(k, attrs[k]); }
+    return e;
+  }
+
+  function renderBonds(){
+    var w = Math.max(workspace.scrollWidth, workspace.clientWidth);
+    var h = Math.max(workspace.scrollHeight, workspace.clientHeight);
+    bondLayer.setAttribute("width", w);
+    bondLayer.setAttribute("height", h);
+    bondLayer.innerHTML = "";
+
+    // group bonds by unordered atom pair to offset multiple bonds
+    var groups = {};
+    bonds.forEach(function(b){
+      var key = [b.a.atomId, b.b.atomId].sort(function(x,y){return x-y;}).join("-");
+      if(!groups[key]) groups[key] = [];
+      groups[key].push(b);
+    });
+
+    Object.keys(groups).forEach(function(key){
+      var list = groups[key];
+      var a1 = byId(list[0].a.atomId), a2 = byId(list[0].b.atomId);
+      if(!a1 || !a2) return;
+      var dx = a2.x - a1.x, dy = a2.y - a1.y;
+      var dist = Math.sqrt(dx*dx+dy*dy) || 1;
+      var ux = dx/dist, uy = dy/dist;
+      var px = -uy, py = ux; // perpendicular unit vector
+      var mx = (a1.x + a2.x)/2, my = (a1.y + a2.y)/2;
+      var n = list.length;
+      var spacing = 11;
+      list.forEach(function(b, i){
+        var offset = (i - (n-1)/2) * spacing;
+        var cx = mx + px*offset, cy = my + py*offset;
+        // two dots of the shared pair, spread slightly along the perpendicular axis
+        var dot1 = {x: cx - px*3.2, y: cy - py*3.2};
+        var dot2 = {x: cx + px*3.2, y: cy + py*3.2};
+
+        var g = svgEl("g", {class:"bond-hit", "data-bond": b.id});
+        var line = svgEl("line", {
+          x1: a1.x, y1: a1.y, x2: a2.x, y2: a2.y,
+          stroke: "var(--grid)", "stroke-width": 1.5, "stroke-dasharray":"3 4", opacity: n>1 ? 0 : 1
+        });
+        if(n===1) g.appendChild(line);
+        var hit = svgEl("circle", {cx:cx, cy:cy, r:12, fill:"transparent", class:"bd-hit"});
+        var c1 = svgEl("circle", {cx:dot1.x, cy:dot1.y, r:3.4, fill:"var(--bond)", class:"bd"});
+        var c2 = svgEl("circle", {cx:dot2.x, cy:dot2.y, r:3.4, fill:"var(--bond)", class:"bd"});
+        g.appendChild(hit); g.appendChild(c1); g.appendChild(c2);
+        g.addEventListener("click", function(){ breakBond(b.id); });
+        g.style.pointerEvents = "auto";
+        var title = svgEl("title", {});
+        title.textContent = "Shared pair \u2014 click to break this bond";
+        g.appendChild(title);
+        bondLayer.appendChild(g);
+      });
+
+      // one faint connecting line even for multi-bonds, drawn first (behind)
+      if(n>1){
+        var backLine = svgEl("line", {
+          x1:a1.x, y1:a1.y, x2:a2.x, y2:a2.y,
+          stroke:"var(--grid)", "stroke-width":1.5, "stroke-dasharray":"3 4"
+        });
+        bondLayer.insertBefore(backLine, bondLayer.firstChild);
+      }
+    });
+  }
+
+  /* ---------------- misc controls ---------------- */
+  document.getElementById("clearBtn").addEventListener("click", function(){
+    if(atoms.length===0 && bonds.length===0) return;
+    if(!confirm("Clear the whole workspace?")) return;
+    atoms = []; bonds = []; selectedDot = null; placedCount = 0;
+    Array.prototype.slice.call(workspace.querySelectorAll(".atom")).forEach(function(n){ n.remove(); });
+    updateEmptyHint();
+    renderBonds();
+  });
+
+  var howto = document.getElementById("howto");
+  document.getElementById("howtoBtn").addEventListener("click", function(){ howto.showModal(); });
+  document.getElementById("howtoClose").addEventListener("click", function(){ howto.close(); });
+
+  window.addEventListener("resize", renderBonds);
+
+  updateEmptyHint();
+  renderBonds();
+})();
+</script>
+</body>
+</html>
